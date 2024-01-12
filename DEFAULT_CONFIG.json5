@@ -1,5 +1,5 @@
 ////
-//// This file presents the default configuration used by both the `zplugin-dds` plugin and the `zenoh-bridge-dds` standalone executable.
+//// This file presents the default configuration used by both the `zenoh-plugin-dds` plugin and the `zenoh-bridge-dds` standalone executable.
 //// The "dds" JSON5 object below can be used as such in the "plugins" part of a config file for the zenoh router (zenohd).
 ////
 {
@@ -28,31 +28,43 @@
       // localhost_only: true,
 
       ////
+      //// shm_enabled: If set to true, the DDS implementation will use Iceoryx shared memory.
+      ////              Requires the bridge to be built with the 'dds_shm' feature for this option to valid.
+      ////              By default set to false.
+      ////
+      // shm_enabled: false,
+
+      ////
       //// group_member_id: A custom identifier for the bridge, that will be used in group management
       ////                  (if not specified, the zenoh UUID is used).
       ////
       // group_member_id: "robot-1",
 
       ////
-      //// group_lease: The lease duration (in seconds) used in group management for all DDS plugins.
-      ////
-      // group_lease: 2.5,
-
-      ////
-      //// allow: A regular expression matching the set of 'partition/topic-name' that must be routed via zenoh.
+      //// allow: 1 or more regular expression matching the set of 'partition/topic-name' that must be routed via zenoh.
       ////        By default, all partitions and topics are allowed.
       ////        If both 'allow' and 'deny' are set a partition and/or topic will be allowed if it matches only the 'allow' expression.
-      ////        Examples of expressions: ".*/TopicA", "Partition-?/.*", "cmd_vel|rosout"...'"#
+      ////        Repeat this option to configure several topic expressions. These expressions are concatenated with '|'.
+      ////        Examples (the last 2 are equivalent):
+      ////           allow: ".*/TopicA",
+      ////           allow: "Partition-?/.*",
+      ////           allow: ["cmd_vel", "rosout"]
+      ////           allow: "cmd_vel|rosout"
       ////
-      // allow: "cmd_vel|rosout",
+      // allow: ["cmd_vel", "rosout"],
 
       ////
-      //// deny:  A regular expression matching the set of 'partition/topic-name' that must NOT be routed via zenoh.
+      //// deny:  1 or more regular regular expression matching the set of 'partition/topic-name' that must NOT be routed via zenoh.
       ////        By default, no partitions and no topics are denied.
       ////        If both 'allow' and 'deny' are set a partition and/or topic will be allowed if it matches only the 'allow' expression.
-      ////        Examples of expressions: ".*/TopicA", "Partition-?/.*", "cmd_vel|rosout"...'"#
+      ////        Repeat this option to configure several topic expressions. These expressions are concatenated with '|'.
+      ////        Examples (the last 2 are equivalent):
+      ////           deny: ".*/TopicA",
+      ////           deny: "Partition-?/.*",
+      ////           deny: ["cmd_vel", "rosout"]
+      ////           allow: "cmd_vel|rosout"
       ////
-      // deny: "cmd_vel|rosout",
+      // deny: ["cmd_vel", "rosout"],
 
       ////
       //// max_frequencies: Specifies a list of maximum frequency of data routing over zenoh for a set of topics.
@@ -60,7 +72,7 @@
       ////                  - "regex" is a regular expression matching the set of "partition/topic-name"
       ////                    (same syntax than --allow option) for which the data (per DDS instance) must be
       ////                    routed at no higher rate than the specified max frequency.
-      ////                  - "float" is the maximum frequency in Hertz; 
+      ////                  - "float" is the maximum frequency in Hertz;
       ////                    if publication rate is higher, downsampling will occur when routing.
       // max_frequencies: ["diagnostic.*=10", "rosout=5"],
 
@@ -90,6 +102,14 @@
       ////                           is used, meaning the route might drop some data in case of congestion.
       ////
       // reliable_routes_blocking: true,
+
+      ////
+      //// queries_timeout: A duration in seconds (default: 5.0 sec) that will be used as a timeout when the bridge
+      ////                  queries any other remote bridge for discovery information and for historical data for TRANSIENT_LOCAL DDS Readers it serves
+      ////                  (i.e. if the query to the remote bridge exceed the timeout, some historical samples might be not routed to the Readers,
+      ////                  but the route will not be blocked forever).
+      ////
+      // queries_timeout: 5.0,
     },
 
     ////

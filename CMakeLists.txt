@@ -27,16 +27,23 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 set(RUST_TARGET_DIR ${CMAKE_BINARY_DIR}/target)
+if(DEFINED CROSS_ARCH)
+  set(RUST_INSTALL_DIR ${RUST_TARGET_DIR}/${CROSS_ARCH})
+  set(BUILD_CMD cargo zigbuild --release --manifest-path "${CMAKE_SOURCE_DIR}/zenoh-bridge-dds/Cargo.toml" --target-dir "${RUST_TARGET_DIR}" --target ${CROSS_ARCH})
+else()
+  set(RUST_INSTALL_DIR ${RUST_TARGET_DIR})
+  set(BUILD_CMD cargo build --release --manifest-path "${CMAKE_SOURCE_DIR}/zenoh-bridge-dds/Cargo.toml" --target-dir "${RUST_TARGET_DIR}")
+endif()
 
 FILE(GLOB RUST_SRC_FILES
   ${CMAKE_SOURCE_DIR}/zenoh-bridge-dds/src/*.rs
-  ${CMAKE_SOURCE_DIR}/zplugin-dds/src/*.rs
+  ${CMAKE_SOURCE_DIR}/zenoh-plugin-dds/src/*.rs
   ${CMAKE_SOURCE_DIR}/Cargo.lock)
 
 add_custom_command(
     OUTPUT
-        ${RUST_TARGET_DIR}/release/zenoh-bridge-dds
-    COMMAND cargo build --release --manifest-path "${CMAKE_SOURCE_DIR}/zenoh-bridge-dds/Cargo.toml" --target-dir "${RUST_TARGET_DIR}"
+        ${RUST_INSTALL_DIR}/release/zenoh-bridge-dds
+    COMMAND ${BUILD_CMD}
     DEPENDS
         ${RUST_SRC_FILES}
 )
@@ -44,14 +51,20 @@ add_custom_command(
 add_custom_target(
     build_crate ALL
     DEPENDS
-        ${RUST_TARGET_DIR}/release/zenoh-bridge-dds
+        ${RUST_INSTALL_DIR}/release/zenoh-bridge-dds
 )
 
-install(FILES
-    ${RUST_TARGET_DIR}/release/zenoh-bridge-dds
-    RENAME zenoh_bridge_dds
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION lib/${PROJECT_NAME}
-)
+macro(INSTALL_ZENOH src_path dst_path)
+  install(FILES
+      ${src_path}
+      RENAME zenoh_bridge_dds
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ${dst_path}
+  )
+endmacro(INSTALL_ZENOH)
+
+INSTALL_ZENOH(${RUST_INSTALL_DIR}/release/zenoh-bridge-dds lib/${PROJECT_NAME})
+
+INSTALL_ZENOH(${RUST_INSTALL_DIR}/release/zenoh-bridge-dds bin)
 
 ament_package()
